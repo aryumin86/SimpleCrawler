@@ -21,11 +21,7 @@ namespace TheCrawler.Service
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                // Recieving new collection task (parallel)
-
-                // 
-
-                // Saving results
+                
 
 
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
