@@ -39,9 +39,10 @@ namespace TheCrawler.Lib.CollectorStaff
                 .Subscribe(async res =>
                 {
                     if (cancellationToken.IsCancellationRequested)
+                    {
                         subject.OnCompleted();
-
-
+                        subject.Dispose();
+                    }
                 });
 
 

@@ -119,6 +119,10 @@
           }
         }
       }
-    }},
-  "defaultProject": "CrawlerWebClient"
+    }
+  },
+  "defaultProject": "CrawlerWebClient",
+  "cli": {
+    "analytics": "b7fbed56-bd8e-4907-92a6-ad757336cbf5"
+  }
 }
