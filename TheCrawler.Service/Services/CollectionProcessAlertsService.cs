@@ -8,6 +8,19 @@ namespace TheCrawler.Service.Services
 {
     public class CollectionProcessAlertsService : ICollectionProcessAlertsService
     {
-        
+        public Task<IEnumerable<SiteCollectionTask>> GetAllSiteCollectionTasksStateAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<SiteCollectionTask> OnSiteWasProcessedAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SendPageCollectionTaskStateAsync(CollectionTask collectionTask)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

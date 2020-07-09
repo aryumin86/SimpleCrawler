@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using TheCrawler.Lib.Db;
 
 namespace TheCrawler.Service
 {
@@ -18,7 +21,15 @@ namespace TheCrawler.Service
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
+                    IConfiguration configuration = hostContext.Configuration;
                     services.AddHostedService<Worker>();
+
+                    var connStr = configuration.GetConnectionString("DbConnString");
+                    services.AddDbContext<CollectionsContxext>(options =>
+                    {
+                        options.UseNpgsql(connStr);
+                    });
+
                 });
     }
 }

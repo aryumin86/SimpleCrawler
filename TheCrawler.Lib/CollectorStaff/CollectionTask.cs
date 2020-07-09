@@ -10,6 +10,7 @@ namespace TheCrawler.Lib.CollectorStaff
         public DateTime? WhenStarted { get; set; }
         public DateTime? WhenEnded { get; set; }
         public CollectionTaskState CollectionTaskState { get; set; }
+        public Exception Exception { get; set; }
         public string Comment { get; set; }
 
         public CollectionTask()
