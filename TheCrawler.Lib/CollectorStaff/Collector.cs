@@ -15,9 +15,10 @@ namespace TheCrawler.Lib.CollectorStaff
     public class Collector
     {
         public int Id { get; set; }
-        public bool NeedGetNewSource { get; set; }
+        public bool NeedGetNewSource { get; set; } = true;
 
         private AppConfig _appConfig;
+        private string _baseUrl = null;
 
         /// <summary>
         /// Data from this site is collecting now.
@@ -27,12 +28,12 @@ namespace TheCrawler.Lib.CollectorStaff
         /// <summary>
         /// LInks of current site that were processed
         /// </summary>
-        private HashSet<string> _processedUrls;
+        private HashSet<string> _processedUrls = new HashSet<string>();
 
         /// <summary>
         /// Links of current site that were not processed yet.
         /// </summary>
-        private HashSet<string> _nonProcessedUrls;
+        private HashSet<string> _nonProcessedUrls = new HashSet<string>();
 
         private ICollectionSoursesRepository _sourcesRepo;
 
@@ -41,8 +42,11 @@ namespace TheCrawler.Lib.CollectorStaff
             _appConfig = appCOnfig;
             _sourcesRepo = sourcesRepo;
             _processedUrls = new HashSet<string>();
-            if(baseUrl != null)
-                _nonProcessedUrls = new HashSet<string>(new string[] { baseUrl });
+            _baseUrl = baseUrl;
+            //if (baseUrl != null)
+            //{
+            //    _nonProcessedUrls = new HashSet<string>(new string[] { baseUrl });
+            //} 
         }
 
         /// <summary>
@@ -60,9 +64,27 @@ namespace TheCrawler.Lib.CollectorStaff
             var intervalSource = Observable.Interval(TimeSpan.FromMilliseconds(_appConfig.CollectionIntervalInMs))
                 .Subscribe(async res =>
                 {
-                    if(NeedGetNewSource == true)
+                    if (_baseUrl != null && _currentSiteCollectionTask == null)
                     {
                         _currentSiteCollectionTask = new SiteCollectionTask();
+                        _currentSiteCollectionTask.CollectionSource =
+                            new Entities.CollectionSource { Host = _baseUrl };
+                        _nonProcessedUrls = new HashSet<string>(new string[] { _baseUrl });
+
+                        _baseUrl = null;
+                    }
+
+                    if (NeedGetNewSource)
+                    {
+                        if(_currentSiteCollectionTask != null && _currentSiteCollectionTask.CollectionSource != null)
+                        {
+                            _currentSiteCollectionTask.WhenEnded = DateTime.Now;
+                            _currentSiteCollectionTask.CollectionSource.WhenCollected = DateTime.Now;
+                            subject.OnNext(_currentSiteCollectionTask);
+                        }                        
+
+                        _currentSiteCollectionTask = new SiteCollectionTask();
+                        _currentSiteCollectionTask.WhenStarted = DateTime.Now;
                         _currentSiteCollectionTask.CollectionSource = _sourcesRepo.GetNotProcessedCollectionSource();
                         if(_currentSiteCollectionTask.CollectionSource == null)
                         {
@@ -78,8 +100,17 @@ namespace TheCrawler.Lib.CollectorStaff
 
                         NeedGetNewSource = false;
                     }
+                    else if(!NeedGetNewSource && _currentSiteCollectionTask.CollectionSource == null)
+                    {
+                        _currentSiteCollectionTask.CollectionSource = new Entities.CollectionSource();
+                    }
 
-                    if (_processedUrls.Count >= _appConfig.MaxLinksPerSource || _nonProcessedUrls.Count == 0)
+                    if(!_nonProcessedUrls.Any())
+                    {
+                        NeedGetNewSource = true;
+                    }
+
+                    if (_processedUrls.Count >= _appConfig.MaxLinksPerSource)
                     {
                         _currentSiteCollectionTask.CollectionTaskState = 
                             Enums.CollectionTaskState.COMPLETED_WITH_SUCCESS;
@@ -90,6 +121,11 @@ namespace TheCrawler.Lib.CollectorStaff
                     else
                     {
                         var u = _nonProcessedUrls.FirstOrDefault();
+                        _nonProcessedUrls.Remove(u);
+                        _processedUrls.Add(u);
+                        if (u != null && !u.ToLower().StartsWith("http"))
+                            u = "http://" + u;
+
                         PageCollectionTask pageTask = new PageCollectionTask();
                         pageTask.CollectionTaskState = Enums.CollectionTaskState.STARTED;
                         pageTask.WhenStarted = DateTime.Now;
@@ -115,9 +151,9 @@ namespace TheCrawler.Lib.CollectorStaff
                                 }
                                 else
                                 {
-                                    var absFromRelUrl = new Uri(new Uri(_currentSiteCollectionTask.CollectionSource.Host), link);
+                                    var absFromRelUrl = new Uri(new Uri(u), link);
                                     if (!_nonProcessedUrls.Contains(absFromRelUrl.AbsoluteUri) && !_processedUrls.Contains(absFromRelUrl.AbsoluteUri))
-                                        _nonProcessedUrls.Add(absUrl.AbsoluteUri);
+                                        _nonProcessedUrls.Add(absFromRelUrl.AbsoluteUri);
                                 }
                             }
 
@@ -130,7 +166,7 @@ namespace TheCrawler.Lib.CollectorStaff
                                 Url = u,
                                 WhenCollected = DateTime.Now
                             };
-                            pageTask.CollectionTaskState = Enums.CollectionTaskState.COMPLETED_WITH_SUCCESS;                            
+                            pageTask.CollectionTaskState = Enums.CollectionTaskState.COMPLETED_WITH_SUCCESS;
                         }
                         catch (Exception ex)
                         {
@@ -139,8 +175,6 @@ namespace TheCrawler.Lib.CollectorStaff
                         }
 
                         subject.OnNext(pageTask);
-                        _nonProcessedUrls.Remove(u);
-                        _processedUrls.Add(u);
                     }
 
                     if (cancellationToken.IsCancellationRequested)

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using TheCrawler.Lib.Config;
 using TheCrawler.Lib.Entities;
 
 namespace TheCrawler.Lib.Db
@@ -15,6 +16,11 @@ namespace TheCrawler.Lib.Db
         {
 
         }
+
+        //public CollectionsContxext(AppConfig appConfig)
+        //{
+        //    _connString = appConfig.DbConnString;
+        //}
 
         public CollectionsContxext(string connString)
         {

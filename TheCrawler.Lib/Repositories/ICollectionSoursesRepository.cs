@@ -12,5 +12,6 @@ namespace TheCrawler.Lib.Repositories
         public IEnumerable<CollectionSource> GetSources(Expression<Func<CollectionSource, bool>> predicate);
         public void UpdateSource(CollectionSource collectionSource);
         public CollectionSource CreateCollectionSource(CollectionSource collectionSource);
+        public void SeedCollectionSources(IEnumerable<CollectionSource> sources);
     }
 }
